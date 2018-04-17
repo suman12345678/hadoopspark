@@ -1,0 +1,4 @@
+--connect 
+jdbc:mysql://localhost/retail_db 
+--username root 
+--password cloudera

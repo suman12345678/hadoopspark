@@ -1,0 +1,13 @@
+<coordinator-app name="datawarehouse" frequency="25 * * * *" start="${startTime}" end="${endTime}" timezone="${timeZoneDef}" xmlns="uri:oozie:coordinator:0.2">
+        <controls>
+                <timeout>20</timeout>
+                <concurrency>10</concurrency>
+                <execution>FIFO</execution>
+        </controls>
+        <action>
+                <workflow>
+                        <app-path>${workflowAppPath}</app-path>
+                </workflow>
+        </action>     
+</coordinator-app>
+

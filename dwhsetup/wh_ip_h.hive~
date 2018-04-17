@@ -1,0 +1,5 @@
+create  external table if not exists wh_ip_h  (ip_id string,galder_fra_dt String,trtp string,name string) row format delimited fields terminated by ',';
+
+
+
+

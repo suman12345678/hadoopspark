@@ -1,0 +1,15 @@
+nameNode=hdfs://quickstart.cloudera:8020
+jobTracker=quickstart.cloudera:8032
+queueName=default
+oozie.use.system.libpath=true
+
+oozie.coord.application.path=${nameNode}/proj/coordinatorconf
+
+workflowAppPath=${nameNode}/proj/workflowapp
+appPath=${nameNode}/proj/hivesub
+
+emailToAddress=suman.ju06@gmail.com
+startTime=2017-05-13T00:00Z 
+endTime=2018-05-16T00:00Z
+timeZoneDef=America/Los_Angeles
+

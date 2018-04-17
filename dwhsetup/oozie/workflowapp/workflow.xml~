@@ -1,0 +1,55 @@
+<workflow-app name="WorkflowWithHiveAction" xmlns="uri:oozie:workflow:0.1">
+    	<start to="hiveAction"/>
+ 	<action name="hiveAction">
+  		<hive xmlns="uri:oozie:hive-action:0.2">
+              		<job-tracker>${jobTracker}</job-tracker>
+              		<name-node>${nameNode}</name-node>
+                        <job-xml>${nameNode}/proj/workflowapp/hive-site.xml</job-xml>
+   			<script>${appPath}/wh_ip_h.hql</script>
+         	</hive>
+         	<ok to="sqoopaction"/>
+         	<error to="sendEmailKillHive"/>
+     	</action>
+ 	<action name="sqoopaction">
+         	<sqoop xmlns="uri:oozie:sqoop-action:0.2">
+                        <job-tracker>${jobTracker}</job-tracker>
+              		<name-node>${nameNode}</name-node>
+   			<command>job --delete myjob</command>
+              	</sqoop>
+         	<ok to="sqoopaction0"/>
+         	<error to="sendEmailKillHive"/>
+ 	</action>
+        <action name="sqoopaction0">
+         	<sqoop xmlns="uri:oozie:sqoop-action:0.2">
+                        <job-tracker>${jobTracker}</job-tracker>
+              		<name-node>${nameNode}</name-node>
+   			<command>job --create myjob -- import --connect jdbc:mysql://localhost/retail_db --username root --password cloudera --table wh_ip_h -m 1 --target-dir /user/hive/warehouse/proj.db/wh_ip_h --fields-terminated-by "'" --driver com.mysql.jdbc.Driver --incremental append --check-column galder_fra_dt --last-value '1960-01-01' --append</command>
+              	</sqoop>
+         	<ok to="sqoopaction1"/>
+         	<error to="sendEmailKillHive"/>
+ 	</action>
+        <action name="sqoopaction1">
+         	<sqoop xmlns="uri:oozie:sqoop-action:0.2">
+                        <job-tracker>${jobTracker}</job-tracker>
+              		<name-node>${nameNode}</name-node>
+   			<command>job --exec myjob -- --password cloudera</command>
+              	</sqoop>
+         	<ok to="end"/>
+         	<error to="sendEmailKillHive"/>
+ 	</action>
+        <action name="sendEmailKillHive">
+                <email xmlns="uri:oozie:email-action:0.1">
+                        <to>${emailToAddress}</to>
+                        <subject>Status of workflow ${wf:id()}</subject>
+                      <body>The workflow ${wf:id()} had issues with the hive action and was killed.  The error logged is: ${wf:errorMessage(wf:lastErrorNode())}</body>
+                </email>
+         	<ok to="killJobAction"/>
+        	<error to="killJobAction"/>
+ 	</action>
+	<kill name="killJobAction">
+            <message>"Killed job due to error in FS Action"</message>
+        </kill>
+	<end name="end" />
+</workflow-app>
+
+

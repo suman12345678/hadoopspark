@@ -1,0 +1,107 @@
+hive table in proj databases
+
+wh_ip_h (ip_id string,galder_fra_dt String,trtp string,name string)
+
+sql table create table wh_ip_h (ip_id char(30),galder_fra_dt date,trtp char(1) ,name char(30));  in retail_db 
+
+
+job.properties file in /home/cloudera/Desktop/proj1/job.properties
+nameNode=hdfs://quickstart.cloudera:8020
+jobTracker=quickstart.cloudera:8032
+queueName=default
+oozie.use.system.libpath=true
+oozie.wf.application.path=${nameNode}/proj
+
+a folder in hdfs created /proj
+d
+
+
+
+
+
+oozie job -oozie http://localhost:11000/oozie/ -config /home/cloudera/Desktop/pig/job.properties -run
+
+mysql connector jar file in lib
+
+copy mysql jdbc jar to /user/oozie/share/lib in hdfs and getting sql error
+ --driver com.mysql.jdbc.Driver required in oozy for using sqoop
+
+--hive-import --hive-table wh_ip_h --hive-database proj   
+its inserting into hdfs but with wrong format
+table is not created in hive. so hive-site.xml should be placed in smae folder as workflow.xml
+
+oozie.wf.application.path=${nameNode}/proj/workflowapp
+
+
+job
+oozie.wf.application.path=${nameNode}/proj/workflowapp
+
+
+coordinator
+oozie.coord.application.path=${nameNode}/proj/coordinatorconf
+oozie.wf.application.path=${nameNode}/proj/workflowapp
+
+
+coordinator job
+===============
+oozie job -oozie http://localhost:11000/oozie -config /home/cloudera/Desktop/proj1/oozie/coordinatorconf/coordinator.properties  -run
+
+
+need to store the last value so
+1) remove the below from sqoop job
+import --connect jdbc:mysql://localhost/retail_db --username root --password cloudera --table wh_ip_h -m 1 --target-dir /user/hive/warehouse/proj.db/wh_ip_h --fields-terminated-by "'" --driver com.mysql.jdbc.Driver --incremental append --check-column galder_fra_dt --last-value '1960-01-01' --append
+
+instead define a job one time and run..next time onwards call the sqoop job
+
+sqoop job --create myjob -- import --connect jdbc:mysql://localhost/retail_db --username root --password cloudera --table wh_ip_h -m 1 --target-dir /user/hive/warehouse/proj.db/wh_ip_h --fields-terminated-by "'" --driver com.mysql.jdbc.Driver --incremental append --check-column galder_fra_dt --last-value '1960-01-01' --append
+
+inside oozie:
+sqoop job --exec myjob ==> asking for password
+
+sqoop[check if sqoop word is required] job --exec myjob -D sqoop.metastore.client.enable.autoconnect=yes
+
+everything under /etc/
+
+sqoop job --meta-connect jdbc:hsqldb:file:/tmp/sqoop-meta/meta.db --create myjob -- import --connect jdbc:mysql://localhost/retail_db --username root --password cloudera --table wh_ip_h -m 1 --target-dir /user/hive/warehouse/proj.db/wh_ip_h --fields-terminated-by "'" --driver com.mysql.jdbc.Driver --incremental append --check-column galder_fra_dt --last-value '1960-01-01' --append
+
+
+in xml always variable should be with $
+
+to prevent prommting for password in sqoop change sqoop-site.xml sqoop.metastore.client.autoconnect.password=true
+
+jdbc:hsqldb:file:/tmp/sqoop-meta/meta.db
+
+~/.sqoop/.
+
+job creation and run by oozy flow
+=================================
+error: 
+
+7292 [main] WARN  org.apache.sqoop.tool.SqoopTool  - $SQOOP_CONF_DIR has not been set in the environment. Cannot check for additional configuration.
+7354 [main] INFO  org.apache.sqoop.Sqoop  - Running Sqoop version: 1.4.5-cdh5.3.0
+8272 [main] ERROR org.apache.sqoop.SqoopOptions  - It seems that you have launched a Sqoop metastore job via
+8272 [main] ERROR org.apache.sqoop.SqoopOptions  - Oozie with sqoop.metastore.client.record.password disabled.
+8272 [main] ERROR org.apache.sqoop.SqoopOptions  - But this configuration is not supported because Sqoop can't
+8272 [main] ERROR org.apache.sqoop.SqoopOptions  - prompt the user to enter the password while being executed
+8272 [main] ERROR org.apache.sqoop.SqoopOptions  - as Oozie tasks. Please enable sqoop.metastore.client.record
+8272 [main] ERROR org.apache.sqoop.SqoopOptions  - .password in sqoop-site.xml, or provide the password
+8272 [main] ERROR org.apache.sqoop.SqoopOptions  - explicitly using --password in the command tag of the Oozie
+8272 [main] ERROR org.apache.sqoop.SqoopOptions  - workflow file.
+8303 [main] WARN  org.apache.sqoop.ConnFactory  - $SQOOP_CONF_DIR has not been set in the environment. Cannot check for additional configuration.
+8325 [main] WARN  org.apache.sqoop.ConnFactory  - Parameter --driver is set to an explicit driver however appropriate connection manager is not being set (via --connection-manager). Sqoop is going to fall back to org.apache.sqoop.manager.GenericJdbcManager. Please specify explicitly which connection manager should be used next time.
+8338 [main] INFO  org.apache.sqoop.manager.SqlManager  - Using default fetchSize of 1000
+8338 [main] INFO  org.apache.sqoop.tool.CodeGenTool  - Beginning code generation
+8701 [main] ERROR org.apache.sqoop.manager.SqlManager  - Error executing statement: java.sql.SQLException: Access denied for user 'root'@'localhost' (using password: NO)
+java.sql.SQLException: Access denied for user 'root'@'localhost' (using password: NO)
+
+
+sqoop-site.xml
+<property>
+    <name>sqoop.metastore.client.record.password</name>
+    <value>true</value>
+    <description>If true, allow saved passwords in the metastore.
+    </description>
+  </property>
+
+after making sqoop.metastore.client.record.password  true same error
+

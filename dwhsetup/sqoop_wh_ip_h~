@@ -1,0 +1,2 @@
+sqoop-import --options-file /home/cloudera/Desktop/proj1/sqoop_param --table wh_ip_h -m1 --hive-import --hive-table wh_ip_h --hive-database proj --incremental lastmodified --check-column galder_fra_dt --last-value '1960-01-01' --append  
+

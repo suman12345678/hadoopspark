@@ -1,0 +1,36 @@
+<workflow-app name="WorkflowWithHiveAction" xmlns="uri:oozie:workflow:0.1">
+    	<start to="hiveAction"/>
+ 	<action name="hiveAction">
+  		<hive xmlns="uri:oozie:hive-action:0.2">
+              		<job-tracker>${jobTracker}</job-tracker>
+              		<name-node>${nameNode}</name-node>
+   			<script>${appPath}/wh_ip_h.hive</script>
+         	</hive>
+         	<ok to="sqoopaction"/>
+         	<error to="sendEmailKillHive"/>
+     	</action>
+ 	<action name="sqoopaction">
+         	<sqoop xmlns="uri:oozie:sqoop-action:0.2">
+                        <job-tracker>${jobTracker}</job-tracker>
+              		<name-node>${nameNode}</name-node>
+   			<command>import --connect jdbc:mysql://localhost/retail_db --username root --password cloudera --table wh_ip_h -m1 --hive-import --hive-table wh_ip_h --hive-database proj --incremental lastmodified --check-column galder_fra_dt --last-value '1960-01-01' --append</command>
+              	</sqoop>
+         	<ok to="end"/>
+         	<error to="sendEmailKillHive"/>
+ 	</action>
+        <action name="sendEmailKillHive">
+                <email xmlns="uri:oozie:email-action:0.1">
+                        <to>${emailToAddress}</to>
+                        <subject>Status of workflow ${wf:id()}</subject>
+                      <body>The workflow ${wf:id()} had issues with the hive action and was killed.  The error logged is: ${wf:errorMessage(wf:lastErrorNode());}</body>
+                </email>
+         	<ok to="killJobAction"/>
+        	<error to="killJobAction"/>
+ 	</action>
+	<kill name="killJobAction">
+            <message>"Killed job due to error in FS Action"</message>
+        </kill>
+	<end name="end" />
+</workflow-app>
+
+
